@@ -6,12 +6,13 @@ import { Providers } from "./providers";
 import { APP_NAME, env } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -27,7 +28,8 @@ export const metadata: Metadata = {
     type: "website",
     siteName: APP_NAME,
     title: `${APP_NAME} — Book services with ease`,
-    description: "Discover services, pick a time that works for you, and manage everything in one place.",
+    description:
+      "Discover services, pick a time that works for you, and manage everything in one place.",
   },
 };
 
@@ -40,10 +42,21 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-      <body className={cn(inter.variable, "min-h-screen bg-background font-sans text-foreground antialiased")}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("font-sans", geist.variable)}
+    >
+      <body
+        className={cn(
+          inter.variable,
+          "min-h-screen bg-background font-sans text-foreground antialiased",
+        )}
+      >
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
