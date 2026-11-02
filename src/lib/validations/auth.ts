@@ -135,34 +135,76 @@ const timeStringSchema = z
 
 /* ---- Users ---- */
 
-export const userSummarySchema = z.object({
-  id: idSchema,
-  firstName: z.string().default(""),
-  lastName: z.string().default(""),
-  name: z.string().nullish(),
-  email: z.string().nullish(),
-  phone: z.string().nullish(),
-  avatarUrl: z.string().nullish(),
-});
+/** Maps backend variants (user_id, username, full_name) onto id, firstName and lastName. */
+function normalizeUser(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  const next: Record<string, unknown> = { ...value };
 
-export const userSchema = userSummarySchema.extend({
-  email: z.string(),
-  role: userRoleSchema.default("customer"),
-  isActive: z.boolean().default(true),
-  emailVerified: z.boolean().nullish(),
-  createdAt: z.string().nullish(),
-  updatedAt: z.string().nullish(),
-});
+  if (next.id === undefined || next.id === null) {
+    next.id = next.userId ?? next.ID ?? next.uuid;
+  }
+
+  const hasName =
+    typeof next.firstName === "string" && next.firstName.length > 0;
+  if (!hasName) {
+    const full =
+      typeof next.fullName === "string" && next.fullName
+        ? next.fullName
+        : typeof next.name === "string" && next.name
+          ? next.name
+          : typeof next.username === "string"
+            ? next.username
+            : "";
+    const [first = "", ...rest] = full.trim().split(/\s+/);
+    next.firstName = first;
+    if (typeof next.lastName !== "string" || next.lastName.length === 0)
+      next.lastName = rest.join(" ");
+  }
+  return next;
+}
+
+export const userSummarySchema = z.preprocess(
+  normalizeUser,
+  z.object({
+    id: idSchema,
+    firstName: z.string().default(""),
+    lastName: z.string().default(""),
+    name: z.string().nullish(),
+    email: z.string().nullish(),
+    phone: z.string().nullish(),
+    avatarUrl: z.string().nullish(),
+  }),
+);
+
+export const userSchema = z.preprocess(
+  normalizeUser,
+  z.object({
+    id: idSchema,
+    firstName: z.string().default(""),
+    lastName: z.string().default(""),
+    name: z.string().nullish(),
+    email: z.string(),
+    phone: z.string().nullish(),
+    avatarUrl: z.string().nullish(),
+    role: userRoleSchema.default("customer"),
+    isActive: z.boolean().default(true),
+    emailVerified: z.boolean().nullish(),
+    createdAt: z.string().nullish(),
+    updatedAt: z.string().nullish(),
+  }),
+);
 
 /* ---- Services ---- */
-
-export const serviceCategorySchema = z.object({
-  id: idSchema,
-  name: z.string(),
-  slug: z.string().nullish(),
-  description: z.string().nullish(),
-  servicesCount: z.coerce.number().nullish(),
-});
+export const serviceCategorySchema = z.preprocess(
+  (value) => (typeof value === "string" ? { id: value, name: value } : value),
+  z.object({
+    id: idSchema,
+    name: z.string(),
+    slug: z.string().nullish(),
+    description: z.string().nullish(),
+    servicesCount: z.coerce.number().nullish(),
+  }),
+);
 
 export const serviceSummarySchema = z.object({
   id: idSchema,

@@ -28,8 +28,10 @@ const categoriesResponseSchema = listOf(serviceCategorySchema);
 async function list(
   params: ServiceListParams = {},
 ): Promise<PaginatedResponse<Service>> {
+  const { categoryId, ...rest } = params;
   return api.getPaginated<Service>(endpoints.services.list, serviceSchema, {
-    ...params,
+    ...rest,
+    category: categoryId,
   });
 }
 

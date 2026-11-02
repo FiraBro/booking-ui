@@ -5,9 +5,9 @@ import { ErrorState } from "@/components/shared/error-state";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/config/routes";
-import { BookingDetails } from "@/features/bookings/components/booking-detail";
-
+import { BookingDetails } from "@/features/bookings/components/booking-details";
 import { useBooking } from "@/features/bookings/hooks/use-bookings";
+import { PaymentSection } from "@/features/payments/components/payment-section";
 
 export default function AdminBookingDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -34,7 +34,11 @@ export default function AdminBookingDetailPage() {
   return (
     <div className="space-y-6">
       {header}
-      <BookingDetails booking={query.data} role="admin" />
+      <BookingDetails
+        booking={query.data}
+        role="admin"
+        paymentSection={<PaymentSection booking={query.data} role="admin" />}
+      />
     </div>
   );
 }

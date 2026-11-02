@@ -1,3 +1,14 @@
-export default function Page() {
-  return <p className="text-sm text-muted-foreground">Coming in a later batch.</p>;
+import { PageHeader } from "@/components/shared/page-header";
+import { AccountSettings } from "@/features/auth/components/account-settings";
+
+export default function CustomerProfilePage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Profile"
+        description="Manage your account details and password."
+      />
+      <AccountSettings />
+    </div>
+  );
 }
