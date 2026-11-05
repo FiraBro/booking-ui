@@ -21,6 +21,9 @@ export type UserListParams = ListParams & {
 
 const userResponseSchema = z.preprocess(unwrapKey("user"), userSchema);
 
+const toBackendRole = (role: string | undefined): string | undefined =>
+  role === "customer" ? "user" : role;
+
 async function list(
   params: UserListParams = {},
 ): Promise<PaginatedResponse<User>> {
@@ -46,7 +49,7 @@ async function parseUser(raw: unknown, knownId?: string): Promise<User> {
 async function create(values: CreateUserInput): Promise<User> {
   const raw = await api.post<unknown>(
     endpoints.users.create,
-    removeEmptyValues({ ...values }),
+    removeEmptyValues({ ...values, role: toBackendRole(values.role) }),
   );
   return parseUser(raw);
 }
@@ -57,7 +60,9 @@ async function update(id: string, values: UpdateUserInput): Promise<User> {
 }
 
 async function updateRole(id: string, role: UserRole): Promise<void> {
-  await api.patch<unknown>(endpoints.users.role(id), { role });
+  await api.patch<unknown>(endpoints.users.role(id), {
+    role: toBackendRole(role),
+  });
 }
 
 async function remove(id: string): Promise<void> {

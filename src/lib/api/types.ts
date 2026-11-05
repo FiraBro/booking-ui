@@ -55,8 +55,18 @@ function firstNumber(
   }
   return undefined;
 }
-
-const LIST_KEYS = ["data", "items", "results", "rows"] as const;
+const LIST_KEYS = [
+  "data",
+  "items",
+  "results",
+  "rows",
+  "users",
+  "bookings",
+  "services",
+  "staff",
+  "notifications",
+  "logs",
+] as const;
 
 /**
  * Converts the backend's list envelope into { items, meta }. Supported shapes:

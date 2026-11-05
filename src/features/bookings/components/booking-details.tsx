@@ -1,9 +1,2 @@
-import React from 'react';
-
-export interface BookingDetailsProps {
-  booking: unknown;
-  role?: string;
-  paymentSection?: React.ReactNode;
-}
-
-export const BookingDetails: React.FC<BookingDetailsProps> = () => null;
+export { BookingDetails } from "@/features/bookings/components/booking-detail";
+export type { BookingDetailsProps } from "@/features/bookings/components/booking-detail";

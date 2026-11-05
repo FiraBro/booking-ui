@@ -140,6 +140,7 @@ const ADMIN_NAV: NavSection[] = [
 
 export const NAVIGATION: Record<UserRole, NavSection[]> = {
   customer: CUSTOMER_NAV,
+  user: CUSTOMER_NAV,
   staff: STAFF_NAV,
   admin: ADMIN_NAV,
 };

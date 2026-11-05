@@ -22,7 +22,16 @@ async function get(): Promise<Setting> {
 
 /** PATCH /settings, then re-read so the form always reflects what the server stored. */
 async function update(values: SettingsFormValues): Promise<Setting> {
-  await api.patch<unknown>(endpoints.settings.root, values);
+  await api.patch<unknown>(endpoints.settings.root, {
+    businessName: values.businessName,
+    contactEmail: values.businessEmail ?? "",
+    contactPhone: values.businessPhone ?? "",
+    currency: values.currency,
+    timezone: values.timezone,
+    minBookingNoticeHours: values.bookingLeadTimeHours,
+    maxBookingAdvanceDays: values.maxAdvanceBookingDays,
+    cancellationWindowHours: values.cancellationWindowHours,
+  });
   return get();
 }
 

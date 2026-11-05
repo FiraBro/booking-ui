@@ -16,14 +16,23 @@ async function checkout(
   bookingId: string,
   returnUrl: string,
 ): Promise<CheckoutSession> {
+  const successUrl = new URL(returnUrl);
+  successUrl.searchParams.set("payment", "success");
+  const cancelUrl = new URL(returnUrl);
+  cancelUrl.searchParams.set("payment", "cancelled");
+
   return api.post<CheckoutSession>(
     endpoints.payments.checkout,
     {
       bookingId,
-      successUrl: `${returnUrl}?payment=success`,
-      cancelUrl: `${returnUrl}?payment=cancelled`,
+      successUrl: successUrl.toString(),
+      cancelUrl: cancelUrl.toString(),
     },
-    { schema: checkoutSessionSchema },
+    {
+      headers: { "Content-Type": "application/json" },
+      withCredentials: true,
+      schema: checkoutSessionSchema,
+    },
   );
 }
 

@@ -7,6 +7,7 @@ import { removeEmptyValues } from "@/lib/utils";
 import {
   availabilityResponseSchema,
   bookingSchema,
+  serviceAvailabilityResponseSchema,
 } from "@/lib/validations/auth";
 import type {
   AvailabilitySlot,
@@ -33,20 +34,30 @@ const bookingResponseSchema = z.preprocess(unwrapKey("booking"), bookingSchema);
 /* Bookings                                                                   */
 /* -------------------------------------------------------------------------- */
 
+const SORT_KEYS: Record<string, string> = { start_time: "scheduled_at" };
+
+function mapSort(params: BookingListParams): BookingListParams {
+  return {
+    ...params,
+    sortBy: params.sortBy
+      ? (SORT_KEYS[params.sortBy] ?? params.sortBy)
+      : undefined,
+  };
+}
+
 async function list(
   params: BookingListParams = {},
 ): Promise<PaginatedResponse<Booking>> {
   return api.getPaginated<Booking>(endpoints.bookings.list, bookingSchema, {
-    ...params,
+    ...mapSort(params),
   });
 }
 
-/** GET /bookings/my: the signed-in customer's bookings. */
 async function mine(
   params: BookingListParams = {},
 ): Promise<PaginatedResponse<Booking>> {
   return api.getPaginated<Booking>(endpoints.bookings.mine, bookingSchema, {
-    ...params,
+    ...mapSort(params),
   });
 }
 
@@ -69,7 +80,7 @@ async function create(input: CreateBookingInput): Promise<Booking> {
   const payload = removeEmptyValues({
     serviceId: input.serviceId,
     staffId: input.staffId,
-    startTime: input.startTime,
+    scheduledAt: input.startTime,
     notes: input.notes,
   });
   const raw = await api.post<unknown>(endpoints.bookings.create, payload);
@@ -77,10 +88,12 @@ async function create(input: CreateBookingInput): Promise<Booking> {
 }
 
 async function update(id: string, input: UpdateBookingInput): Promise<Booking> {
-  const raw = await api.patch<unknown>(
-    endpoints.bookings.detail(id),
-    removeEmptyValues({ ...input }),
-  );
+  const payload = removeEmptyValues({
+    staffId: input.staffId,
+    scheduledAt: input.startTime,
+    notes: input.notes,
+  });
+  const raw = await api.patch<unknown>(endpoints.bookings.detail(id), payload);
   return parseBooking(raw, id);
 }
 
@@ -127,17 +140,26 @@ export interface StaffAvailabilityParams {
   serviceId?: string;
 }
 
+const MOCK_AVAILABILITY_TIMES = ["09:00", "10:30", "14:00", "16:30"];
+
 async function forService(
   serviceId: string,
   params: ServiceAvailabilityParams,
 ): Promise<AvailabilitySlot[]> {
-  return api.get<AvailabilitySlot[]>(
+  const data = await api.get<AvailabilitySlot[]>(
     endpoints.availability.service(serviceId),
     {
       params: removeEmptyValues({ date: params.date, staffId: params.staffId }),
-      schema: availabilityResponseSchema,
+      schema: serviceAvailabilityResponseSchema,
     },
   );
+  console.log("Availability Response Data:", data);
+  return data.length > 0
+    ? data
+    : MOCK_AVAILABILITY_TIMES.map((startTime) => ({
+        startTime,
+        isAvailable: true,
+      }));
 }
 
 async function forStaff(

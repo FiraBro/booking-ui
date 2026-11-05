@@ -169,9 +169,20 @@ export function PaymentPanel({
         ) : null}
 
         {payment.isError ? (
-          <p className="text-sm text-muted-foreground">
-            We couldn&apos;t refresh the payment status.
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>
+              We couldn&apos;t refresh the payment status. Your booking details
+              are still available, and you can try checkout again.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {checkout.isError ? (
+          <Alert variant="destructive" role="alert">
+            <AlertDescription>
+              {getErrorMessage(checkout.error)}
+            </AlertDescription>
+          </Alert>
         ) : null}
 
         <div className="flex flex-wrap gap-2">
@@ -179,6 +190,8 @@ export function PaymentPanel({
             <Button
               onClick={startCheckout}
               disabled={checkout.isPending || redirecting}
+              className={checkout.isError ? "w-full sm:w-auto" : undefined}
+              size={checkout.isError ? "lg" : "default"}
             >
               {checkout.isPending || redirecting ? (
                 <LoaderCircle className="animate-spin" aria-hidden />
@@ -187,8 +200,8 @@ export function PaymentPanel({
               )}
               {redirecting
                 ? "Redirecting…"
-                : status === "failed"
-                  ? "Try payment again"
+                : checkout.isError || status === "failed"
+                  ? "Retry Payment"
                   : "Pay now"}
             </Button>
           ) : null}

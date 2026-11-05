@@ -161,7 +161,9 @@ async function getProfile(): Promise<User> {
   const user = await api.get<User>(endpoints.auth.profile, {
     schema: profileResponseSchema,
   });
-  if (readRoleCookie() !== user.role) await syncRoleCookie(user.role);
+  // Role-cookie synchronization is advisory; don't hold up protected-page
+  // rendering while its best-effort request completes.
+  if (readRoleCookie() !== user.role) void syncRoleCookie(user.role);
   return user;
 }
 

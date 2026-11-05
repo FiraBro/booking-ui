@@ -26,10 +26,12 @@ export function DateStep({
   onSlotChange,
 }: DateStepProps) {
   const availability = useServiceAvailability(serviceId, date);
+  console.log("UI received slots:", availability.data);
   const slots = useMemo(
     () => (date ? resolveSlots(date, availability.data) : []),
     [date, availability.data],
   );
+  console.log("UI resolved slots:", slots);
   const selectedDate = fromISODate(date) ?? undefined;
 
   return (

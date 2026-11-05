@@ -5,13 +5,14 @@ import { ErrorState } from "@/components/shared/error-state";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/config/routes";
-import { BookingDetails } from "@/features/bookings/components/booking-details";
+import { BookingDetails } from "@/features/bookings/components/booking-detail";
 import { useBooking } from "@/features/bookings/hooks/use-bookings";
 import { PaymentSection } from "@/features/payments/components/payment-section";
 
 export default function CustomerBookingDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const query = useBooking(bookingId);
+  console.log("Booking Detail Payload:", query.data);
 
   const header = (
     <PageHeader

@@ -23,7 +23,7 @@ export function toDate(
       : typeof value === "number"
         ? new Date(value)
         : parseISO(value);
-  return isValid(date) ? date : null;
+  return isValid(date) && date.getFullYear() > 1900 ? date : null;
 }
 
 export function formatDate(

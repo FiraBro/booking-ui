@@ -10,6 +10,10 @@ export function useProfile() {
     queryKey: queryKeys.auth.profile,
     queryFn: () => authApi.getProfile(),
     staleTime: STALE_TIME.long,
+    // The profile query gates every protected page. Retrying a failed request
+    // can leave the workspace skeleton up for over a minute (each API request
+    // has a 20 second timeout), so surface the failure immediately instead.
+    retry: false,
   });
 }
 

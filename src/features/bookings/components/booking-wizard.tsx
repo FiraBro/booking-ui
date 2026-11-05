@@ -16,6 +16,8 @@ import { ServiceStep } from "@/features/bookings/components/service-step";
 import { StaffStep } from "@/features/bookings/components/staff-step";
 import { useCreateBooking } from "@/features/bookings/hooks/use-booking-mutations";
 import type { ResolvedSlot } from "@/features/bookings/lib/slots";
+import { useCheckout } from "@/features/payments/hooks/use-payments";
+import { isSafeRedirectUrl } from "@/features/payments/lib/checkout";
 import { useService } from "@/features/services/hooks/use-service";
 import { getFieldErrors, normalizeApiError } from "@/lib/api/error";
 import { queryKeys } from "@/lib/constants";
@@ -54,6 +56,7 @@ export function BookingWizard({ initialServiceId }: BookingWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const createBooking = useCreateBooking();
+  const checkout = useCheckout();
 
   const [serviceId, setServiceId] = useState<string | undefined>(
     initialServiceId,
@@ -164,11 +167,37 @@ export function BookingWizard({ initialServiceId }: BookingWizardProps) {
     setSubmitError(null);
     createBooking.mutate(parsed.data, {
       onSuccess: (booking) => {
-        notify.success(
-          "Booking requested",
-          "You can review it and pay from the booking page.",
+        notify.info("Booking created", "Opening secure checkout…");
+        checkout.mutate(
+          {
+            bookingId: booking.id,
+            returnPath: ROUTES.customer.bookingDetail(booking.id),
+          },
+          {
+            onSuccess: (session) => {
+              if (
+                session.checkoutUrl &&
+                isSafeRedirectUrl(session.checkoutUrl)
+              ) {
+                window.location.assign(session.checkoutUrl);
+                return;
+              }
+
+              notify.warning(
+                "Booking created",
+                "Checkout couldn't start. You can retry payment from the booking details page.",
+              );
+              router.push(ROUTES.customer.bookingDetail(booking.id));
+            },
+            onError: () => {
+              notify.warning(
+                "Booking created",
+                "Checkout couldn't start. You can retry payment from the booking details page.",
+              );
+              router.push(ROUTES.customer.bookingDetail(booking.id));
+            },
+          },
         );
-        router.push(ROUTES.customer.bookingDetail(booking.id));
       },
       onError: (error) => {
         const normalized = normalizeApiError(error);
@@ -323,19 +352,32 @@ export function BookingWizard({ initialServiceId }: BookingWizardProps) {
               <Button
                 variant="outline"
                 onClick={goBack}
-                disabled={index <= 0 || createBooking.isPending}
+                disabled={
+                  index <= 0 ||
+                  createBooking.isPending ||
+                  checkout.isPending
+                }
               >
                 Back
               </Button>
               {step === "review" ? (
                 <Button
                   onClick={handleConfirm}
-                  disabled={createBooking.isPending || !service || !slot}
+                  disabled={
+                    createBooking.isPending ||
+                    checkout.isPending ||
+                    !service ||
+                    !slot
+                  }
                 >
-                  {createBooking.isPending ? (
+                  {createBooking.isPending || checkout.isPending ? (
                     <LoaderCircle className="animate-spin" aria-hidden />
                   ) : null}
-                  {createBooking.isPending ? "Confirming…" : "Confirm booking"}
+                  {createBooking.isPending
+                    ? "Confirming…"
+                    : checkout.isPending
+                      ? "Starting checkout…"
+                      : "Confirm & pay"}
                 </Button>
               ) : (
                 <Button onClick={goNext} disabled={!canContinue}>

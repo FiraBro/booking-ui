@@ -65,7 +65,7 @@ export interface RouteRule {
 export const PROTECTED_ROUTE_RULES: readonly RouteRule[] = [
   { prefix: "/admin", roles: ["admin"] },
   { prefix: "/staff", roles: ["staff"] },
-  { prefix: "/customer", roles: ["customer"] },
+  { prefix: "/customer", roles: ["customer", "user"] },
 ];
 
 /** Pages that signed-in users should not see (they get redirected to their home). */
@@ -82,6 +82,7 @@ export const AUTH_PATHS: readonly string[] = [
 
 export const ROLE_HOME: Record<UserRole, string> = {
   customer: ROUTES.customer.dashboard,
+  user: ROUTES.customer.dashboard,
   staff: ROUTES.staff.dashboard,
   admin: ROUTES.admin.dashboard,
 };
@@ -89,12 +90,14 @@ export const ROLE_HOME: Record<UserRole, string> = {
 /** Where each role manages its own profile and password. Admins do this from settings. */
 export const ROLE_PROFILE: Record<UserRole, string> = {
   customer: ROUTES.customer.profile,
+  user: ROUTES.customer.profile,
   staff: ROUTES.staff.profile,
   admin: ROUTES.admin.settings,
 };
 
 export const ROLE_NOTIFICATIONS: Record<UserRole, string> = {
   customer: ROUTES.customer.notifications,
+  user: ROUTES.customer.notifications,
   staff: ROUTES.staff.notifications,
   admin: ROUTES.admin.notifications,
 };
@@ -102,6 +105,7 @@ export const ROLE_NOTIFICATIONS: Record<UserRole, string> = {
 /** Where each role views its bookings. */
 export const ROLE_BOOKINGS: Record<UserRole, string> = {
   customer: ROUTES.customer.bookings,
+  user: ROUTES.customer.bookings,
   staff: ROUTES.staff.bookings,
   admin: ROUTES.admin.bookings,
 };

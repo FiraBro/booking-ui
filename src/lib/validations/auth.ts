@@ -319,30 +319,83 @@ export const availabilitySlotSchema = z.preprocess(
     })),
 );
 
-export const availabilityResponseSchema = listOf(availabilitySlotSchema);
+const availabilitySlotsSchema = z.array(availabilitySlotSchema);
+
+/** Availability endpoints may return a bare list or wrap it in an object. */
+function unwrapAvailabilitySlots(value: unknown): unknown {
+  if (Array.isArray(value) || !isRecord(value)) return value;
+
+  for (const key of [
+    "slots",
+    "availableSlots",
+    "availability",
+    "items",
+    "results",
+    "data",
+  ]) {
+    const nested = value[key];
+    if (Array.isArray(nested)) return nested;
+    if (isRecord(nested)) {
+      const slots = unwrapAvailabilitySlots(nested);
+      if (Array.isArray(slots)) return slots;
+    }
+  }
+
+  return value;
+}
+
+export const availabilityResponseSchema = z.preprocess(
+  unwrapAvailabilitySlots,
+  availabilitySlotsSchema,
+);
+
+/** GET /availability/services/{id} returns string times in an object envelope. */
+export const serviceAvailabilityResponseSchema = z
+  .object({
+    availableSlots: z.array(z.string()),
+    date: z.string(),
+    serviceId: z.string(),
+  })
+  .transform(({ availableSlots }) =>
+    availableSlots.map((startTime) => ({ startTime, isAvailable: true })),
+  );
 
 /* ---- Bookings ---- */
 
-export const bookingSchema = z.object({
-  id: idSchema,
-  reference: z.string().nullish(),
-  customerId: idSchema.nullish(),
-  customer: userSummarySchema.nullish(),
-  serviceId: idSchema.nullish(),
-  service: serviceSummarySchema.nullish(),
-  staffId: idSchema.nullish(),
-  staff: staffSummarySchema.nullish(),
-  startTime: z.string(),
-  endTime: z.string().nullish(),
-  status: bookingStatusSchema,
-  paymentStatus: paymentStatusSchema.nullish(),
-  totalPrice: z.coerce.number().nullish(),
-  currency: z.string().nullish(),
-  notes: z.string().nullish(),
-  cancellationReason: z.string().nullish(),
-  createdAt: z.string().nullish(),
-  updatedAt: z.string().nullish(),
-});
+export const bookingSchema = z.preprocess(
+  (value) =>
+    isRecord(value)
+      ? {
+          ...value,
+          startTime:
+            value.startTime ??
+            value.scheduledAt ??
+            value.scheduledTime ??
+            value.start_time ??
+            value.scheduled_at,
+        }
+      : value,
+  z.object({
+    id: idSchema,
+    reference: z.string().nullish(),
+    customerId: idSchema.nullish(),
+    customer: userSummarySchema.nullish(),
+    serviceId: idSchema.nullish(),
+    service: serviceSummarySchema.nullish(),
+    staffId: idSchema.nullish(),
+    staff: staffSummarySchema.nullish(),
+    startTime: z.string(),
+    endTime: z.string().nullish(),
+    status: bookingStatusSchema,
+    paymentStatus: paymentStatusSchema.nullish(),
+    totalPrice: z.coerce.number().nullish(),
+    currency: z.string().nullish(),
+    notes: z.string().nullish(),
+    cancellationReason: z.string().nullish(),
+    createdAt: z.string().nullish(),
+    updatedAt: z.string().nullish(),
+  }),
+);
 
 /* ---- Payments ---- */
 
@@ -428,11 +481,25 @@ export const revenueReportSchema = z.object({
   averageBookingValue: z.coerce.number().nullish(),
   currency: z.string().nullish(),
   series: listOf(
-    z.object({
-      date: z.string(),
-      revenue: z.coerce.number().default(0),
-      bookings: z.coerce.number().nullish(),
-    }),
+    z.preprocess(
+      (value) =>
+        isRecord(value)
+          ? {
+              ...value,
+              date:
+                value.date ??
+                value.day ??
+                value.period ??
+                value.label ??
+                value.createdAt,
+            }
+          : value,
+      z.object({
+        date: z.string().optional(),
+        revenue: z.coerce.number().default(0),
+        bookings: z.coerce.number().nullish(),
+      }),
+    ),
   ),
 });
 

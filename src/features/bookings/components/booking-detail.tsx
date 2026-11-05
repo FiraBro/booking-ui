@@ -34,7 +34,7 @@ function DetailRow({
   );
 }
 
-interface BookingDetailsProps {
+export interface BookingDetailsProps {
   booking: Booking;
   role: UserRole;
   /** Optional payment panel shown beside the booking (the payments feature supplies it). */

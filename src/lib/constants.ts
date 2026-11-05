@@ -23,13 +23,14 @@ export function getServerApiBaseUrl(): string {
 /* Roles                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export const USER_ROLES = ["customer", "staff", "admin"] as const;
+export const USER_ROLES = ["customer", "staff", "admin", "user"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   customer: "Customer",
   staff: "Staff",
   admin: "Administrator",
+  user: "User",
 };
 
 export function parseUserRole(
