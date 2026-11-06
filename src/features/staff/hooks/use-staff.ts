@@ -8,7 +8,11 @@ export function useStaffList(
 ) {
   return useQuery({
     queryKey: queryKeys.staff.list({ ...params }),
-    queryFn: () => staffApi.list(params),
+    queryFn: async () => {
+      const data = await staffApi.list(params);
+      console.log("Raw API Staff Record:", data.items);
+      return data;
+    },
     placeholderData: keepPreviousData,
     staleTime: STALE_TIME.default,
     enabled: options.enabled ?? true,

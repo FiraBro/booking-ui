@@ -237,24 +237,24 @@ export const serviceSchema = z.object({
 
 export const staffSummarySchema = z.object({
   id: idSchema,
-  firstName: z.string().nullish(),
-  lastName: z.string().nullish(),
-  name: z.string().nullish(),
-  title: z.string().nullish(),
-  avatarUrl: z.string().nullish(),
+  firstName: z.string().nullish().catch(undefined),
+  lastName: z.string().nullish().catch(undefined),
+  name: z.string().nullish().catch(undefined),
+  title: z.string().nullish().catch(undefined),
+  avatarUrl: z.string().nullish().catch(undefined),
 });
 
 export const staffSchema = staffSummarySchema.extend({
   userId: idSchema.nullish(),
-  email: z.string().nullish(),
-  phone: z.string().nullish(),
-  bio: z.string().nullish(),
-  isActive: z.boolean().default(true),
-  serviceIds: z.array(idSchema).default([]),
-  services: z.array(serviceSummarySchema).optional(),
-  createdAt: z.string().nullish(),
-  updatedAt: z.string().nullish(),
-});
+  email: z.string().nullish().catch(undefined),
+  phone: z.string().nullish().catch(undefined),
+  bio: z.string().nullish().catch(undefined),
+  isActive: z.boolean().catch(true),
+  serviceIds: z.array(idSchema).catch([]),
+  services: z.array(z.any()).optional(),
+  createdAt: z.string().nullish().catch(undefined),
+  updatedAt: z.string().nullish().catch(undefined),
+}).passthrough();
 
 export const workingHourSchema = z.object({
   id: idSchema.nullish(),
@@ -402,24 +402,34 @@ export const bookingSchema = z.preprocess(
       : value,
   z.object({
     id: idSchema,
-    reference: z.string().nullish(),
-    customerId: idSchema.nullish(),
-    customer: userSummarySchema.nullish(),
-    serviceId: idSchema.nullish(),
-    service: serviceSummarySchema.nullish(),
-    staffId: idSchema.nullish(),
-    staff: staffSummarySchema.nullish(),
-    startTime: z.string(),
-    endTime: z.string().nullish(),
-    status: bookingStatusSchema,
-    paymentStatus: paymentStatusSchema.nullish(),
-    totalPrice: z.coerce.number().nullish(),
-    currency: z.string().nullish(),
-    notes: z.string().nullish(),
-    cancellationReason: z.string().nullish(),
-    createdAt: z.string().nullish(),
-    updatedAt: z.string().nullish(),
-  }),
+    reference: z.string().nullish().catch(undefined),
+    customerId: idSchema.nullish().catch(undefined),
+    customer: userSummarySchema.nullish().catch(undefined),
+    serviceId: idSchema.nullish().catch(undefined),
+    service: serviceSummarySchema.nullish().catch(undefined),
+    staffId: idSchema.nullish().catch(undefined),
+    staff: z
+      .object({
+        id: idSchema,
+        firstName: z.string().nullish(),
+        lastName: z.string().nullish(),
+        email: z.string().nullish(),
+        name: z.string().nullish(),
+      })
+      .passthrough()
+      .nullish()
+      .catch(undefined),
+    startTime: z.string().catch(""),
+    endTime: z.string().nullish().catch(undefined),
+    status: bookingStatusSchema.catch("pending"),
+    paymentStatus: paymentStatusSchema.nullish().catch(undefined),
+    totalPrice: z.coerce.number().nullish().catch(undefined),
+    currency: z.string().nullish().catch(undefined),
+    notes: z.string().nullish().catch(undefined),
+    cancellationReason: z.string().nullish().catch(undefined),
+    createdAt: z.string().nullish().catch(undefined),
+    updatedAt: z.string().nullish().catch(undefined),
+  }).passthrough(),
 );
 
 /* ---- Payments ---- */

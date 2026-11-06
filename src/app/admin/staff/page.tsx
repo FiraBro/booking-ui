@@ -72,7 +72,8 @@ export default function AdminStaffPage() {
       id: "services",
       header: "Services",
       hideBelow: "sm",
-      cell: (member) => member.serviceIds.length,
+      cell: (member) =>
+        member.services?.length || member.serviceIds?.length || 0,
     },
     {
       id: "status",

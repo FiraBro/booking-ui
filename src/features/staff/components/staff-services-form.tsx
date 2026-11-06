@@ -54,6 +54,17 @@ export function StaffServicesForm({ staffId }: { staffId: string }) {
     );
   }
 
+  function submit() {
+    const payload = {
+      services: selected.filter((serviceId) => serviceId.trim().length > 0),
+    };
+    console.log("Outbound Service Assignment Payload:", payload);
+    save.mutate(
+      { id: staffId, serviceIds: payload.services },
+      { onSuccess: () => setDraft(null) },
+    );
+  }
+
   return (
     <div className="space-y-4">
       <ul className="divide-y rounded-lg border">
@@ -87,12 +98,7 @@ export function StaffServicesForm({ staffId }: { staffId: string }) {
         </p>
         <Button
           disabled={draft === null || save.isPending}
-          onClick={() =>
-            save.mutate(
-              { id: staffId, serviceIds: selected },
-              { onSuccess: () => setDraft(null) },
-            )
-          }
+          onClick={submit}
         >
           {save.isPending ? (
             <LoaderCircle className="animate-spin" aria-hidden />

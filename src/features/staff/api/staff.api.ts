@@ -25,6 +25,12 @@ export type StaffListParams = ListParams & {
 };
 
 const staffResponseSchema = z.preprocess(unwrapKey("staff"), staffSchema);
+const assignServicesResponseSchema = z
+  .object({
+    message: z.string().optional(),
+    success: z.boolean().optional(),
+  })
+  .passthrough();
 
 async function list(
   params: StaffListParams = {},
@@ -35,9 +41,8 @@ async function list(
 }
 
 async function get(id: string): Promise<Staff> {
-  return api.get<Staff>(endpoints.staff.detail(id), {
-    schema: staffResponseSchema,
-  });
+  const response = await api.get<unknown>(endpoints.staff.detail(id));
+  return unwrapKey("staff")(response) as Staff;
 }
 
 async function parseStaff(raw: unknown, knownId?: string): Promise<Staff> {
@@ -73,7 +78,11 @@ async function getServices(id: string): Promise<string[]> {
 }
 
 async function setServices(id: string, serviceIds: string[]): Promise<void> {
-  await api.post<unknown>(endpoints.staff.services(id), { serviceIds });
+  await api.post(
+    endpoints.staff.services(id),
+    { services: serviceIds },
+    { schema: assignServicesResponseSchema },
+  );
 }
 
 async function getSchedule(id: string): Promise<Schedule> {
@@ -86,14 +95,19 @@ async function saveSchedule(
   id: string,
   values: ScheduleFormValues,
 ): Promise<void> {
-  await api.post<unknown>(endpoints.staff.schedule(id), {
-    workingHours: values.workingHours.map((row) => ({
-      dayOfWeek: row.dayOfWeek,
-      isWorking: row.isWorking,
-      startTime: row.startTime,
-      endTime: row.endTime,
-    })),
-  });
+  const cleanedRows = values.workingHours
+    .filter((row) => row.isWorking)
+    .map((row) => ({
+      day: String(row.dayOfWeek),
+      start: row.startTime,
+      end: row.endTime,
+    }));
+
+  await api.post<unknown>(
+    endpoints.staff.schedule(id),
+    cleanedRows,
+    { schema: z.any() },
+  );
 }
 
 async function addHoliday(

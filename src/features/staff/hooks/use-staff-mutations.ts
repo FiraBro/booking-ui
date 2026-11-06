@@ -61,10 +61,11 @@ export function useSetStaffServices() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.staff.services(vars.id),
       });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.availability.all,
       });
+      void queryClient.invalidateQueries({ queryKey: ["staff"] });
+      void queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
 }

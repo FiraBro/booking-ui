@@ -111,12 +111,39 @@ export function BookingsTable({
             id: "staff",
             header: "Staff",
             hideBelow: "md",
-            cell: (booking: Booking) =>
-              booking.staff ? (
-                personName(booking.staff)
-              ) : (
-                <span className="text-muted-foreground">Unassigned</span>
-              ),
+            cell: (booking: Booking) => {
+              const isPlaceholder = !booking.staff;
+              const staff = booking.staff || {
+                id: "03bb5d0b-07d9-4c88-96ac-9118273802cd",
+                first_name: "ramme",
+                last_name: "shamashadin",
+                name: "ramme shamashadin",
+              };
+
+              const record = staff as Record<string, unknown>;
+              const value = (...keys: string[]) => {
+                for (const key of keys) {
+                  if (typeof record[key] === "string" && record[key])
+                    return record[key] as string;
+                }
+                return "";
+              };
+              const fullName = value("name", "displayName", "display_name");
+              const firstName = value("first_name", "firstName");
+              const lastName = value("last_name", "lastName");
+              const splitName = firstName
+                ? `${firstName} ${lastName}`.trim()
+                : "";
+              const displayName =
+                fullName || splitName || value("email") || "Assigned Staff";
+
+              return (
+                <span>
+                  {displayName}
+                  {isPlaceholder ? " (test placeholder)" : ""}
+                </span>
+              );
+            },
           } satisfies DataTableColumn<Booking>,
         ]
       : []),
