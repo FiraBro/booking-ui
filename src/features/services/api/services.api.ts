@@ -1,14 +1,9 @@
-import { z } from "zod";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/error";
-import { extractId, unwrapKey } from "@/lib/api/helpers";
+import { extractId } from "@/lib/api/helpers";
 import { removeEmptyValues } from "@/lib/utils";
-import {
-  listOf,
-  serviceCategorySchema,
-  serviceSchema,
-} from "@/lib/validations/auth";
+import { serviceSchema } from "@/lib/validations/auth";
 import type {
   ListParams,
   PaginatedResponse,
@@ -22,9 +17,6 @@ export type ServiceListParams = ListParams & {
   isActive?: boolean;
 };
 
-const serviceResponseSchema = z.preprocess(unwrapKey("service"), serviceSchema);
-const categoriesResponseSchema = listOf(serviceCategorySchema);
-
 async function list(
   params: ServiceListParams = {},
 ): Promise<PaginatedResponse<Service>> {
@@ -36,21 +28,23 @@ async function list(
 }
 
 async function get(id: string): Promise<Service> {
-  return api.get<Service>(endpoints.services.detail(id), {
-    schema: serviceResponseSchema,
-  });
+  return api.get<Service>(endpoints.services.detail(id));
 }
 
 async function categories(): Promise<ServiceCategory[]> {
-  return api.get<ServiceCategory[]>(endpoints.services.categories, {
-    schema: categoriesResponseSchema,
-  });
+  return api.get<ServiceCategory[]>(endpoints.services.categories);
 }
 
 /** Create/update responses are sometimes just `{ id }`. Fall back to refetching the entity. */
 async function parseService(raw: unknown, knownId?: string): Promise<Service> {
-  const parsed = serviceResponseSchema.safeParse(raw);
-  if (parsed.success) return parsed.data;
+  if (
+    raw !== null &&
+    typeof raw === "object" &&
+    !Array.isArray(raw) &&
+    "name" in raw
+  ) {
+    return raw as Service;
+  }
   const id = knownId ?? extractId(raw, "service");
   if (id) return get(id);
   throw new ApiError({ kind: "schema" });

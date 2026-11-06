@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ErrorState } from "@/components/shared/error-state";
@@ -16,10 +16,9 @@ import { useDeleteService } from "@/features/services/hooks/use-service-mutation
 import { useService } from "@/features/services/hooks/use-service";
 import { formatCurrency, formatDateTime, formatDuration } from "@/lib/format";
 
-export default function AdminServiceDetailPage() {
-  const { serviceId } = useParams<{ serviceId: string }>();
+export default function AdminServiceDetailPage({ id }: { id: string }) {
   const router = useRouter();
-  const query = useService(serviceId);
+  const query = useService(id);
   const remove = useDeleteService();
   const [confirmOpen, setConfirmOpen] = useState(false);
 

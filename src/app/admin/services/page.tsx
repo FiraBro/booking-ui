@@ -171,8 +171,11 @@ export default function AdminServicesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All categories</SelectItem>
-            {(categories.data ?? []).map((category) => (
-              <SelectItem key={category.id} value={category.id}>
+            {(categories.data ?? []).map((category, index) => (
+              <SelectItem
+                key={category.id || category.slug || index}
+                value={category.id || category.slug || String(index)}
+              >
                 {category.name}
               </SelectItem>
             ))}
