@@ -237,8 +237,8 @@ export const serviceSchema = z.object({
 
 export const staffSummarySchema = z.object({
   id: idSchema,
-  firstName: z.string().default(""),
-  lastName: z.string().default(""),
+  firstName: z.string().nullish(),
+  lastName: z.string().nullish(),
   name: z.string().nullish(),
   title: z.string().nullish(),
   avatarUrl: z.string().nullish(),
@@ -280,12 +280,37 @@ export const scheduleSchema = z.object({
   holidays: listOf(holidaySchema),
 });
 
-/** GET /staff/{id}/schedule may return a bare list of working hours or a full schedule object. */
-export const scheduleResponseSchema = z.preprocess(
-  (value) =>
-    Array.isArray(value) ? { workingHours: value, holidays: [] } : value,
-  scheduleSchema,
-);
+/** Accepts arbitrary schedule payloads and keeps only rows the UI can render. */
+export const scheduleResponseSchema = z.unknown().transform((value) => {
+  const schedule = isRecord(value)
+    ? isRecord(value.schedule)
+      ? value.schedule
+      : value
+    : {};
+  const workingHours =
+    (Array.isArray(value) ? value : undefined) ??
+    (Array.isArray(schedule.workingHours)
+      ? schedule.workingHours
+      : Array.isArray(schedule.days)
+        ? schedule.days
+        : Array.isArray(schedule.availability)
+          ? schedule.availability
+          : []);
+  const holidays = Array.isArray(schedule.holidays) ? schedule.holidays : [];
+  const staffId = idSchema.safeParse(schedule.staffId);
+
+  return {
+    ...(staffId.success ? { staffId: staffId.data } : {}),
+    workingHours: workingHours.flatMap((row) => {
+      const parsed = workingHourSchema.safeParse(row);
+      return parsed.success ? [parsed.data] : [];
+    }),
+    holidays: holidays.flatMap((holiday) => {
+      const parsed = holidaySchema.safeParse(holiday);
+      return parsed.success ? [parsed.data] : [];
+    }),
+  };
+});
 
 export const staffServicesResponseSchema = z.preprocess((value) => {
   const list = Array.isArray(value)

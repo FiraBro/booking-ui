@@ -154,7 +154,8 @@ function extractFieldErrors(body: unknown): Record<string, string[]> {
 
 export function createSchemaError(url: string, error: ZodError): ApiError {
   if (process.env.NODE_ENV !== "production") {
-    console.error(`[api] Unexpected response shape from ${url}`, error.issues);
+    console.error(`[api] Unexpected response shape from ${url}`);
+    console.dir(error.issues, { depth: null });
   }
   return new ApiError({ kind: "schema", details: error.issues });
 }

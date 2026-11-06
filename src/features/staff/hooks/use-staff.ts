@@ -19,7 +19,11 @@ export function useStaffList(
 export function useStaffMember(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.staff.detail(id ?? ""),
-    queryFn: () => staffApi.get(id as string),
+    queryFn: async () => {
+      const data = await staffApi.get(id as string);
+      console.log("Staff Detail UI Payload:", data);
+      return data;
+    },
     enabled: Boolean(id),
     staleTime: STALE_TIME.default,
   });

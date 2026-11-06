@@ -27,7 +27,8 @@ import { useStaffMember } from "@/features/staff/hooks/use-staff";
 import { useDeleteStaff } from "@/features/staff/hooks/use-staff-mutations";
 
 export default function AdminStaffDetailPage() {
-  const { staffId } = useParams<{ staffId: string }>();
+  const { id } = useParams<{ id: string[] }>();
+  const staffId = id.at(-1);
   const router = useRouter();
   const query = useStaffMember(staffId);
   const remove = useDeleteStaff();
