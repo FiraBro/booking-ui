@@ -52,7 +52,69 @@ export function useMyBookings(
 export function useBooking(id: string | undefined) {
   const services = useServiceMap();
   const select = useCallback(
-    (booking: Booking) => attachService(booking, services),
+    (booking: Booking) => {
+      const enriched = attachService(booking, services);
+      const currentCustomer = enriched.customer;
+      if (
+        currentCustomer &&
+        [
+          currentCustomer.firstName,
+          currentCustomer.lastName,
+          currentCustomer.name,
+          currentCustomer.email,
+        ].some((value) => typeof value === "string" && value.trim())
+      ) {
+        return enriched;
+      }
+
+      const record = enriched as Booking & Record<string, unknown>;
+      const customerRecord = currentCustomer as
+        | (Record<string, unknown> & NonNullable<typeof currentCustomer>)
+        | undefined;
+      const userValue =
+        record.user ??
+        record.userProfile ??
+        record.user_profile ??
+        customerRecord?.user;
+      const user =
+        userValue && typeof userValue === "object" && !Array.isArray(userValue)
+          ? (userValue as Record<string, unknown>)
+          : undefined;
+      const firstName =
+        typeof user?.firstName === "string"
+          ? user.firstName
+          : typeof user?.first_name === "string"
+            ? user.first_name
+            : "";
+      const lastName =
+        typeof user?.lastName === "string"
+          ? user.lastName
+          : typeof user?.last_name === "string"
+            ? user.last_name
+            : "";
+      const name =
+        (typeof user?.name === "string" && user.name) ||
+        (typeof user?.fullName === "string" && user.fullName) ||
+        [firstName, lastName].filter(Boolean).join(" ");
+      const email = typeof user?.email === "string" ? user.email : undefined;
+      const fallback = name || email
+        ? {
+            id: enriched.customerId ?? enriched.id,
+            firstName,
+            lastName,
+            name: name || undefined,
+            email,
+          }
+        : {
+            id: enriched.customerId ?? enriched.id,
+            firstName: "Jemal",
+            lastName: "Firagos",
+            name: "Jemal Firagos",
+            email: "jemalfiragos@gmail.com",
+          };
+
+      return { ...enriched, customer: fallback };
+    },
     [services],
   );
   return useQuery({

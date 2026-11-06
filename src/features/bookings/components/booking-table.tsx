@@ -81,7 +81,9 @@ export function BookingsTable({
             header: "Customer",
             cell: (booking: Booking) => (
               <div className="min-w-0">
-                <p className="truncate">{personName(booking.customer)}</p>
+                <p className="truncate">
+                  {personName(booking.customer, "Customer Profile")}
+                </p>
                 {booking.customer?.email ? (
                   <p className="truncate text-xs text-muted-foreground">
                     {booking.customer.email}
@@ -112,36 +114,16 @@ export function BookingsTable({
             header: "Staff",
             hideBelow: "md",
             cell: (booking: Booking) => {
-              const isPlaceholder = !booking.staff;
-              const staff = booking.staff || {
-                id: "03bb5d0b-07d9-4c88-96ac-9118273802cd",
-                first_name: "ramme",
-                last_name: "shamashadin",
-                name: "ramme shamashadin",
-              };
-
-              const record = staff as Record<string, unknown>;
-              const value = (...keys: string[]) => {
-                for (const key of keys) {
-                  if (typeof record[key] === "string" && record[key])
-                    return record[key] as string;
-                }
-                return "";
-              };
-              const fullName = value("name", "displayName", "display_name");
-              const firstName = value("first_name", "firstName");
-              const lastName = value("last_name", "lastName");
-              const splitName = firstName
-                ? `${firstName} ${lastName}`.trim()
-                : "";
-              const displayName =
-                fullName || splitName || value("email") || "Assigned Staff";
-
+              const fullName = booking.staff?.name?.trim();
+              const splitName = [
+                booking.staff?.firstName,
+                booking.staff?.lastName,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .trim();
               return (
-                <span>
-                  {displayName}
-                  {isPlaceholder ? " (test placeholder)" : ""}
-                </span>
+                <span>{fullName || splitName || "Unassigned"}</span>
               );
             },
           } satisfies DataTableColumn<Booking>,
@@ -157,7 +139,9 @@ export function BookingsTable({
       id: "payment",
       header: "Payment",
       hideBelow: "lg",
-      cell: (booking) => <BookingPaymentBadge status={booking.paymentStatus} />,
+      cell: (booking) => (
+        <BookingPaymentBadge status={booking.paymentStatus} />
+      ),
     },
     {
       id: "total",
