@@ -55,7 +55,10 @@ async function create(values: CreateUserInput): Promise<User> {
 }
 
 async function update(id: string, values: UpdateUserInput): Promise<User> {
-  const raw = await api.patch<unknown>(endpoints.users.detail(id), values);
+  const raw = await api.patch<unknown>(endpoints.users.detail(id), {
+    ...values,
+    username: values.email,
+  });
   return parseUser(raw, id);
 }
 
