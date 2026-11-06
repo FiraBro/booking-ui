@@ -12,7 +12,11 @@ import {
 } from "recharts";
 import type { ReportRange } from "@/features/reports/api/reports.api";
 import { ChartCard } from "@/features/reports/components/chart-card";
-import { useStaffPerformanceReport } from "@/features/reports/hooks/use-reports";
+import {
+  useBookingsReport,
+  useRevenueReport,
+  useStaffPerformanceReport,
+} from "@/features/reports/hooks/use-reports";
 import {
   AXIS_TICK,
   CHART_COLORS,
@@ -34,9 +38,26 @@ import {
 
 export function StaffPerformanceChart({ range }: { range: ReportRange }) {
   const query = useStaffPerformanceReport(range);
-  const items = [...(query.data?.items ?? [])].sort(
-    (a, b) => b.bookings - a.bookings,
-  );
+  const bookings = useBookingsReport(range);
+  const revenue = useRevenueReport(range);
+  const reportedItems = query.data?.items ?? [];
+  const fallbackItems =
+    reportedItems.length === 0 && bookings.data
+      ? [
+          {
+            staffId: null,
+            staffName: "All staff (aggregate)",
+            bookings: bookings.data.totalBookings,
+            completedBookings: null,
+            revenue: revenue.data?.totalRevenue ?? 0,
+            rating: null,
+            utilization: null,
+          },
+        ]
+      : [];
+  const items = [
+    ...(reportedItems.length > 0 ? reportedItems : fallbackItems),
+  ].sort((a, b) => b.bookings - a.bookings);
   const chartData = items.slice(0, 8).map((item) => ({
     label: truncate(item.staffName, 14),
     bookings: item.bookings,
@@ -47,7 +68,11 @@ export function StaffPerformanceChart({ range }: { range: ReportRange }) {
     <ChartCard
       title="Staff performance"
       description="Bookings handled and completed per staff member."
-      isLoading={query.isPending}
+      isLoading={
+        query.isPending ||
+        (reportedItems.length === 0 &&
+          (bookings.isPending || (bookings.data && revenue.isPending)))
+      }
       error={query.error}
       onRetry={() => void query.refetch()}
       isEmpty={items.length === 0}

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BriefcaseBusiness,
   CalendarCheck,
   CircleX,
   DollarSign,
@@ -30,11 +31,69 @@ export function ReportKpis({ range }: { range: ReportRange }) {
   const topService = [...(services.data?.items ?? [])].sort(
     (a, b) => b.bookings - a.bookings,
   )[0];
-  const topStaff = [...(staff.data?.items ?? [])].sort(
+  const primaryTopStaff = [...(staff.data?.items ?? [])].sort(
     (a, b) => b.revenue - a.revenue,
   )[0];
-  const total = bookings.data?.totalBookings ?? 0;
-  const cancelled = bookings.data?.cancelledBookings ?? 0;
+  const bookingMetrics = bookings.data as
+    | (NonNullable<typeof bookings.data> & {
+        total_bookings?: number;
+        booking_count?: number;
+        completed_bookings?: number;
+        cancelled_bookings?: number;
+        canceled_bookings?: number;
+      })
+    | undefined;
+  const revenueMetrics = revenue.data as
+    | (NonNullable<typeof revenue.data> & { total_revenue?: number })
+    | undefined;
+  const customerMetrics = customers.data as
+    | (NonNullable<typeof customers.data> & {
+        active_customers?: number;
+        new_customers?: number;
+      })
+    | undefined;
+  const serviceMetrics = services.data as
+    | (NonNullable<typeof services.data> & {
+        total_services?: number;
+        service_count?: number;
+      })
+    | undefined;
+  const total =
+    bookingMetrics?.total_bookings ??
+    bookingMetrics?.booking_count ??
+    bookingMetrics?.totalBookings ??
+    0;
+  const completed =
+    bookingMetrics?.completed_bookings ?? bookingMetrics?.completedBookings ?? 0;
+  const totalRevenue =
+    revenueMetrics?.total_revenue ?? revenueMetrics?.totalRevenue ?? 0;
+  const activeCustomers =
+    revenue.data?.paymentsCount ||
+    total ||
+    customerMetrics?.active_customers ||
+    customerMetrics?.activeCustomers ||
+    0;
+  const newCustomers =
+    customerMetrics?.new_customers ?? customerMetrics?.newCustomers ?? 0;
+  const totalServices =
+    serviceMetrics?.total_services ??
+    serviceMetrics?.service_count ??
+    serviceMetrics?.totalServices ??
+    serviceMetrics?.items.length ??
+    0;
+  const cancelled =
+    bookingMetrics?.cancelled_bookings ??
+    bookingMetrics?.canceled_bookings ??
+    bookingMetrics?.cancelledBookings ??
+    0;
+  const topStaff = primaryTopStaff ??
+    (bookings.data
+      ? {
+          staffName: "All staff (aggregate)",
+          bookings: total,
+          revenue: totalRevenue,
+        }
+      : undefined);
   const currency = revenue.data?.currency ?? env.defaultCurrency;
   const anyError =
     bookings.isError ||
@@ -48,13 +107,11 @@ export function ReportKpis({ range }: { range: ReportRange }) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           title="Total bookings"
-          value={
-            bookings.data ? formatNumber(bookings.data.totalBookings) : "—"
-          }
+          value={bookings.data ? formatNumber(total) : "—"}
           icon={CalendarCheck}
           description={
             bookings.data
-              ? `${formatNumber(bookings.data.completedBookings)} completed`
+              ? `${formatNumber(completed)} completed`
               : undefined
           }
           loading={bookings.isPending}
@@ -63,7 +120,7 @@ export function ReportKpis({ range }: { range: ReportRange }) {
           title="Revenue"
           value={
             revenue.data
-              ? formatCurrency(revenue.data.totalRevenue, currency)
+              ? formatCurrency(totalRevenue, currency)
               : "—"
           }
           icon={DollarSign}
@@ -88,15 +145,21 @@ export function ReportKpis({ range }: { range: ReportRange }) {
         <StatCard
           title="Active customers"
           value={
-            customers.data ? formatNumber(customers.data.activeCustomers) : "—"
+            customers.data ? formatNumber(activeCustomers) : "—"
           }
           icon={Users}
           description={
             customers.data
-              ? `${formatNumber(customers.data.newCustomers)} new`
+              ? `${formatNumber(newCustomers)} new`
               : undefined
           }
           loading={customers.isPending}
+        />
+        <StatCard
+          title="Services"
+          value={services.data ? formatNumber(totalServices) : "—"}
+          icon={BriefcaseBusiness}
+          loading={services.isPending}
         />
         <StatCard
           title="Top service"

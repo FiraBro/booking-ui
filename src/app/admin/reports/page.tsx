@@ -14,11 +14,11 @@ import { ReportKpis } from "@/features/reports/components/report-kpis";
 import { RevenueChart } from "@/features/reports/components/revenue-chart";
 import { ServicesChart } from "@/features/reports/components/services-chart";
 import { StaffPerformanceChart } from "@/features/reports/components/staff-performance-chart";
-import { lastDays } from "@/features/reports/lib/range";
+import { defaultReportRange } from "@/features/reports/lib/range";
 import { formatDate } from "@/lib/format";
 
 export default function AdminReportsPage() {
-  const [range, setRange] = useState<DateRangeValue>(() => lastDays(30));
+  const [range, setRange] = useState<DateRangeValue>(() => defaultReportRange());
 
   return (
     <div className="space-y-6">
@@ -31,7 +31,9 @@ export default function AdminReportsPage() {
               value={range}
               clearable={false}
               onChange={(next) =>
-                setRange(next.dateFrom && next.dateTo ? next : lastDays(30))
+                setRange(
+                  next.dateFrom && next.dateTo ? next : defaultReportRange(),
+                )
               }
             />
             <Button variant="outline" onClick={() => window.print()}>

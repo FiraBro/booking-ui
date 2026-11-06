@@ -496,94 +496,241 @@ export const notificationSchema = z
 
 /* ---- Reports ---- */
 
-export const bookingsReportSchema = z.object({
-  totalBookings: z.coerce.number().default(0),
-  completedBookings: z.coerce.number().default(0),
-  cancelledBookings: z.coerce.number().default(0),
-  pendingBookings: z.coerce.number().default(0),
-  series: listOf(
-    z.object({
-      date: z.string(),
-      bookings: z.coerce.number().default(0),
-      cancellations: z.coerce.number().nullish(),
-    }),
-  ),
-});
+function normalizeReportAliases(
+  value: unknown,
+  aliases: Record<string, string[]>,
+): unknown {
+  if (!isRecord(value)) return value;
+  const output = { ...value };
+  for (const [canonical, alternatives] of Object.entries(aliases)) {
+    if (output[canonical] !== undefined && output[canonical] !== null) continue;
+    const alias = alternatives.find(
+      (key) => output[key] !== undefined && output[key] !== null,
+    );
+    if (alias) output[canonical] = output[alias];
+  }
+  return output;
+}
 
-export const revenueReportSchema = z.object({
-  totalRevenue: z.coerce.number().default(0),
-  refundedAmount: z.coerce.number().default(0),
-  averageBookingValue: z.coerce.number().nullish(),
-  currency: z.string().nullish(),
-  series: listOf(
-    z.preprocess(
-      (value) =>
-        isRecord(value)
-          ? {
-              ...value,
-              date:
-                value.date ??
-                value.day ??
-                value.period ??
-                value.label ??
-                value.createdAt,
-            }
-          : value,
-      z.object({
-        date: z.string().optional(),
-        revenue: z.coerce.number().default(0),
-        bookings: z.coerce.number().nullish(),
-      }),
+function reportPayload(value: unknown): unknown {
+  if (!isRecord(value) || !isRecord(value.data)) return value;
+  return { ...value.data };
+}
+
+export const bookingsReportSchema = z.preprocess(
+  (value) => {
+    const payload = reportPayload(value);
+    if (!isRecord(payload)) return payload;
+    const series = payload.series ?? payload.daily;
+    const withSeries = { ...payload, series };
+    const normalized = normalizeReportAliases(withSeries, {
+      totalBookings: ["total", "total_bookings", "bookingCount", "booking_count"],
+      completedBookings: ["completed_bookings", "completedCount", "completed_count"],
+      cancelledBookings: ["cancelled_bookings", "canceledBookings", "canceled_bookings"],
+      pendingBookings: ["pending_bookings", "pendingCount", "pending_count"],
+    });
+    if (!isRecord(normalized)) return normalized;
+    const byStatus = normalized.byStatus;
+    if (byStatus && typeof byStatus === "object" && !Array.isArray(byStatus)) {
+      const status = byStatus as Record<string, unknown>;
+      if (normalized.cancelledBookings == null) {
+        normalized.cancelledBookings = status.cancelled ?? status.canceled;
+      }
+    }
+    return normalized;
+  },
+  z.object({
+    totalBookings: z.coerce.number().default(0),
+    completedBookings: z.coerce.number().default(0),
+    cancelledBookings: z.coerce.number().default(0),
+    pendingBookings: z.coerce.number().default(0),
+    series: listOf(
+      z.preprocess(
+        (value) =>
+          normalizeReportAliases(value, {
+            date: ["period", "day"],
+            bookings: ["count", "booking_count", "bookingCount"],
+            cancellations: ["cancellation_count", "cancellationCount"],
+          }),
+        z.object({
+          date: z.string(),
+          bookings: z.coerce.number().default(0),
+          cancellations: z.coerce.number().nullish(),
+        }).passthrough(),
+      ),
     ),
-  ),
-});
+  }).passthrough(),
+);
+
+export const revenueReportSchema = z.preprocess(
+  (value) => {
+    const payload = reportPayload(value);
+    if (!isRecord(payload)) return payload;
+    const normalized = normalizeReportAliases(
+      { ...payload, series: payload.series ?? payload.daily },
+      {
+        totalRevenue: ["total_revenue", "revenueTotal", "revenue_total"],
+        paymentsCount: ["payments_count"],
+        refundedAmount: ["refunded_amount", "totalRefunded", "total_refunded"],
+        averageBookingValue: ["average_booking_value", "averageOrderValue"],
+      },
+    );
+    if (!isRecord(normalized)) return normalized;
+    const netRevenue = Number(normalized.netRevenue);
+    const grossRevenue = Number(normalized.grossRevenue);
+    if (normalized.totalRevenue == null) {
+      normalized.totalRevenue =
+        (Number.isFinite(netRevenue) && netRevenue !== 0
+          ? netRevenue
+          : undefined) ??
+        (Number.isFinite(grossRevenue) ? grossRevenue : 0);
+    }
+    return normalized;
+  },
+  z.object({
+    totalRevenue: z.coerce.number().default(0),
+    paymentsCount: z.coerce.number().nullish(),
+    refundedAmount: z.coerce.number().default(0),
+    averageBookingValue: z.coerce.number().nullish(),
+    currency: z.string().nullish(),
+    series: listOf(
+      z.preprocess(
+        (value) =>
+          isRecord(value)
+            ? normalizeReportAliases(
+                {
+                  ...value,
+                  date:
+                    value.date ??
+                    value.day ??
+                    value.period ??
+                    value.label ??
+                    value.createdAt,
+                },
+                {
+                  date: ["period"],
+                  revenue: ["net", "gross", "amount", "total_revenue"],
+                },
+              )
+            : value,
+        z.object({
+          date: z.string().optional(),
+          revenue: z.coerce.number().default(0),
+          bookings: z.coerce.number().nullish(),
+        }).passthrough(),
+      ),
+    ),
+  }).passthrough(),
+);
 
 export const servicesReportSchema = z.preprocess(
-  (value) => (Array.isArray(value) ? { items: value } : value),
+  (value) => {
+    value = reportPayload(value);
+    const record = Array.isArray(value)
+      ? { items: value }
+      : isRecord(value)
+        ? { ...value }
+        : value;
+    if (!isRecord(record)) return record;
+    const items = record.items ?? record.services ?? record.results ?? record.data;
+    const normalized = normalizeReportAliases(
+      {
+        ...record,
+        items,
+        totalServices:
+          record.totalServices ??
+          record.total_services ??
+          record.serviceCount ??
+          record.service_count ??
+          record.servicesCount ??
+          record.services_count ??
+          (Array.isArray(items) ? items.length : undefined),
+      },
+      { totalServices: ["total_services", "serviceCount", "service_count", "servicesCount", "services_count"] },
+    );
+    return normalized;
+  },
   z.object({
+    totalServices: z.coerce.number().default(0),
     items: listOf(
-      z.object({
-        serviceId: idSchema.nullish(),
-        serviceName: z.string(),
-        bookings: z.coerce.number().default(0),
-        revenue: z.coerce.number().default(0),
-      }),
+      z.preprocess(
+        (value) =>
+          normalizeReportAliases(value, {
+            serviceId: ["service_id", "id"],
+            serviceName: ["service_name", "name"],
+            bookings: ["booking_count", "bookingCount", "total_bookings"],
+            revenue: ["total_revenue", "revenue_total"],
+          }),
+        z.object({
+          serviceId: idSchema.nullish(),
+          serviceName: z.string(),
+          bookings: z.coerce.number().default(0),
+          revenue: z.coerce.number().default(0),
+        }).passthrough(),
+      ),
     ),
-  }),
+  }).passthrough(),
 );
 
 export const staffPerformanceReportSchema = z.preprocess(
   (value) => (Array.isArray(value) ? { items: value } : value),
   z.object({
     items: listOf(
-      z.object({
-        staffId: idSchema.nullish(),
-        staffName: z.string(),
-        bookings: z.coerce.number().default(0),
-        completedBookings: z.coerce.number().nullish(),
-        revenue: z.coerce.number().default(0),
-        rating: z.coerce.number().nullish(),
-        utilization: z.coerce.number().nullish(),
-      }),
+      z.preprocess(
+        (value) =>
+          normalizeReportAliases(value, {
+            staffId: ["staff_id", "id"],
+            staffName: ["staff_name", "name"],
+            bookings: ["booking_count", "bookingCount", "total_bookings"],
+            completedBookings: ["completed_bookings", "completed_count"],
+            revenue: ["total_revenue", "revenue_total"],
+          }),
+        z.object({
+          staffId: idSchema.nullish(),
+          staffName: z.string(),
+          bookings: z.coerce.number().default(0),
+          completedBookings: z.coerce.number().nullish(),
+          revenue: z.coerce.number().default(0),
+          rating: z.coerce.number().nullish(),
+          utilization: z.coerce.number().nullish(),
+        }).passthrough(),
+      ),
     ),
-  }),
+  }).passthrough(),
 );
 
-export const customersReportSchema = z.object({
-  totalCustomers: z.coerce.number().default(0),
-  activeCustomers: z.coerce.number().default(0),
-  newCustomers: z.coerce.number().default(0),
-  returningCustomers: z.coerce.number().nullish(),
-  topCustomers: listOf(
-    z.object({
-      customerId: idSchema.nullish(),
-      name: z.string(),
-      email: z.string().nullish(),
-      bookings: z.coerce.number().default(0),
-      totalSpent: z.coerce.number().default(0),
+export const customersReportSchema = z.preprocess(
+  (value) =>
+    normalizeReportAliases(value, {
+      totalCustomers: ["total_customers", "customerCount", "customer_count"],
+      activeCustomers: ["active_customers", "active_count"],
+      newCustomers: ["new_customers", "new_count"],
+      returningCustomers: ["returning_customers", "returning_count"],
     }),
-  ),
-});
+  z.object({
+    totalCustomers: z.coerce.number().default(0),
+    activeCustomers: z.coerce.number().default(0),
+    newCustomers: z.coerce.number().default(0),
+    returningCustomers: z.coerce.number().nullish(),
+    topCustomers: listOf(
+      z.preprocess(
+        (value) =>
+          normalizeReportAliases(value, {
+            customerId: ["customer_id", "id"],
+            bookings: ["booking_count", "bookingCount"],
+            totalSpent: ["total_spent", "total_revenue", "amount_spent"],
+          }),
+        z.object({
+          customerId: idSchema.nullish(),
+          name: z.string(),
+          email: z.string().nullish(),
+          bookings: z.coerce.number().default(0),
+          totalSpent: z.coerce.number().default(0),
+        }).passthrough(),
+      ),
+    ),
+  }).passthrough(),
+);
 
 /* ---- Settings ---- */
 
