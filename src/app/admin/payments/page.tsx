@@ -79,7 +79,9 @@ export default function AdminPaymentsPage() {
       hideBelow: "md",
       cell: (booking) => (
         <div className="min-w-0">
-          <p className="truncate">{personName(booking.customer)}</p>
+          <p className="truncate">
+            {personName(booking.customer, "Customer Profile")}
+          </p>
           {booking.customer?.email ? (
             <p className="truncate text-xs text-muted-foreground">
               {booking.customer.email}

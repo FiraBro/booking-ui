@@ -56,18 +56,18 @@ export function ServiceStep({ selectedId, onSelect }: ServiceStepProps) {
             >
               All
             </Button>
-            {categories.data.map((category) => (
-              <Button
-                key={category.id}
-                type="button"
-                size="sm"
-                variant={categoryId === category.id ? "default" : "outline"}
-                aria-pressed={categoryId === category.id}
-                onClick={() => setCategoryId(category.id)}
-              >
-                {category.name}
-              </Button>
-            ))}
+            {categories.data.map((category, index) => {
+              // Uses a combination of id and loop index to guarantee uniqueness
+              const uniqueKey = category.id
+                ? `cat-${category.id}-${index}`
+                : `cat-idx-${index}`;
+
+              return (
+                <Button key={uniqueKey} type="button" size="sm">
+                  {category.name}
+                </Button>
+              );
+            })}
           </div>
         ) : null}
       </div>

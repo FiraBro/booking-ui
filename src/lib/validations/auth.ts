@@ -388,29 +388,84 @@ export const serviceAvailabilityResponseSchema = z
 /* ---- Bookings ---- */
 
 export const bookingSchema = z.preprocess(
-  (value) =>
-    isRecord(value)
-      ? {
-          ...value,
-          startTime:
-            value.startTime ??
-            value.scheduledAt ??
-            value.scheduledTime ??
-            value.start_time ??
-            value.scheduled_at,
-        }
-      : value,
+  (value) => {
+    if (!isRecord(value)) return value;
+    const customer =
+      value.customer ??
+      value.user ??
+      value.customerProfile ??
+      value.customer_profile;
+    const staffValue =
+      value.staff ?? value.assignedStaff ?? value.assigned_staff;
+    let staff = staffValue;
+    if (isRecord(staffValue)) {
+      const staffUser = isRecord(staffValue.user) ? staffValue.user : {};
+      const mergedStaff = { ...staffUser, ...staffValue };
+      staff = {
+        ...mergedStaff,
+        id: staffValue.id ?? staffUser.id,
+        name:
+          mergedStaff.name ??
+          mergedStaff.displayName ??
+          mergedStaff.fullName,
+      };
+    }
+    const paymentValue = value.payment;
+    const payments = value.payments;
+    const rootStatus =
+      typeof value.status === "string" ? value.status.toLowerCase() : undefined;
+    const paymentStatus =
+      value.paymentStatus ??
+      (isRecord(paymentValue) ? paymentValue.status : undefined) ??
+      (Array.isArray(payments)
+        ? payments.find(
+            (item) => isRecord(item) && typeof item.status === "string",
+          )?.status
+        : undefined) ??
+      (rootStatus &&
+      (PAYMENT_STATUSES as readonly string[]).includes(rootStatus)
+        ? rootStatus
+        : undefined);
+    return {
+      ...value,
+      customer,
+      staff,
+      paymentStatus,
+      startTime:
+        value.startTime ??
+        value.scheduledAt ??
+        value.scheduledTime ??
+        value.start_time ??
+        value.scheduled_at,
+    };
+  },
   z.object({
     id: idSchema,
     reference: z.string().nullish().catch(undefined),
     customerId: idSchema.nullish().catch(undefined),
-    customer: userSummarySchema.nullish().catch(undefined),
+    customer: z
+      .preprocess(
+        normalizeUser,
+        z
+          .object({
+            id: idSchema.optional(),
+            firstName: z.string().default(""),
+            lastName: z.string().default(""),
+            name: z.string().nullish(),
+            email: z.string().nullish(),
+            phone: z.string().nullish(),
+            avatarUrl: z.string().nullish(),
+          })
+          .passthrough(),
+      )
+      .nullish()
+      .catch(undefined),
     serviceId: idSchema.nullish().catch(undefined),
     service: serviceSummarySchema.nullish().catch(undefined),
     staffId: idSchema.nullish().catch(undefined),
     staff: z
       .object({
-        id: idSchema,
+        id: idSchema.optional(),
         firstName: z.string().nullish(),
         lastName: z.string().nullish(),
         email: z.string().nullish(),
