@@ -10,6 +10,7 @@ export const endpoints = {
     logout: "/auth/logout",
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
+    acceptInvitation: "/auth/accept-invitation",
     profile: "/auth/profile",
     changePassword: "/auth/change-password",
   },
@@ -18,6 +19,7 @@ export const endpoints = {
     create: "/users",
     detail: (id: string) => `/users/${id}`,
     role: (id: string) => `/users/${id}/role`,
+    invite: "/admin/invitations",
   },
   services: {
     list: "/services",

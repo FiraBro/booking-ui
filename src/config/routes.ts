@@ -8,6 +8,7 @@ export const ROUTES = {
   register: "/register",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  acceptInvitation: "/accept-invitation",
 
   customer: {
     dashboard: "/customer/dashboard",

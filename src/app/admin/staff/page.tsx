@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Plus, Trash2 } from "lucide-react";
+import { Eye, MailPlus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -116,10 +116,18 @@ export default function AdminStaffPage() {
         title="Staff"
         description="Manage the people who deliver your services."
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus aria-hidden />
-            New staff member
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/admin/staff/invite">
+                <MailPlus aria-hidden />
+                Invite staff
+              </Link>
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus aria-hidden />
+              New staff profile
+            </Button>
+          </div>
         }
       />
 
