@@ -13,7 +13,10 @@ import { useState } from "react";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStaffBookings } from "@/features/bookings/hooks/use-bookings";
+import {
+  useBookings,
+  useStaffBookings,
+} from "@/features/bookings/hooks/use-bookings";
 import { getBookingHref, personName } from "@/features/bookings/lib/display";
 import { useStaffSchedule } from "@/features/staff/hooks/use-staff";
 import type { BookingStatus, UserRole } from "@/lib/constants";
@@ -229,18 +232,26 @@ export function ScheduleCalendar({ staffId, role }: ScheduleCalendarProps) {
   const last = days[days.length - 1] as Date;
 
   const schedule = useStaffSchedule(staffId);
-  const bookingsQuery = useStaffBookings(
+  const bookingParams = {
+    dateFrom: toISODate(first),
+    dateTo: toISODate(endOfDay(last)),
+    page: 1,
+    pageSize: 100,
+    sortBy: "start_time",
+    sortOrder: "asc",
+  } as const;
+  const adminBookingsQuery = useBookings(
     {
       staffId,
-      dateFrom: toISODate(first),
-      dateTo: toISODate(endOfDay(last)),
-      page: 1,
-      pageSize: 100,
-      sortBy: "start_time",
-      sortOrder: "asc",
+      ...bookingParams,
     },
-    { enabled: Boolean(staffId) },
+    { enabled: Boolean(staffId) && role === "admin" },
   );
+  const staffBookingsQuery = useStaffBookings(bookingParams, {
+    enabled: Boolean(staffId) && role === "staff",
+  });
+  const bookingsQuery =
+    role === "admin" ? adminBookingsQuery : staffBookingsQuery;
 
   const bookings = bookingsQuery.data?.items ?? [];
   const workingRows = (schedule.data?.workingHours ?? []).filter(
