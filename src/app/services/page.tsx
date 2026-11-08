@@ -75,9 +75,9 @@ function ServicesListing({
             >
               All
             </Button>
-            {categories.data.map((category) => (
+            {categories.data.map((category, index) => (
               <Button
-                key={category.id}
+                key={`${category.id}-${index}`}
                 size="sm"
                 variant={categoryId === category.id ? "default" : "outline"}
                 aria-pressed={categoryId === category.id}

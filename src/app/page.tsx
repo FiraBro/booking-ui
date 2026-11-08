@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PublicHeader } from "@/components/layout/public-header";
 import { Button } from "@/components/ui/button";
@@ -49,8 +50,15 @@ export default function HomePage() {
       <footer className="border-t bg-background">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href={ROUTES.home} className="text-sm font-semibold tracking-tight">
-              Eventify
+            <Link href={ROUTES.home} aria-label="Eventify home" className="inline-flex">
+              <Image
+                src="/brand/eventify-logo.png"
+                alt="Eventify"
+                width={108}
+                height={36}
+                unoptimized
+                className="h-7 w-auto object-contain"
+              />
             </Link>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Discover services and book appointments with ease.

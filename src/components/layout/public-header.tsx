@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarCheck, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
@@ -53,12 +54,18 @@ export function PublicHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Link
           href={ROUTES.home}
-          className="flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight"
+          aria-label="Eventify home"
+          className="flex shrink-0 items-center"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CalendarCheck className="size-4" aria-hidden />
-          </span>
-          Eventify
+          <Image
+            src="/brand/eventify-logo.png"
+            alt="Eventify"
+            width={108}
+            height={36}
+            unoptimized
+            priority
+            className="h-8 w-auto object-contain sm:h-9"
+          />
         </Link>
 
         <nav

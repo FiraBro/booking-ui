@@ -226,7 +226,11 @@ export const serviceSchema = z.object({
   categoryId: idSchema.nullish(),
   category: serviceCategorySchema.nullish(),
   imageUrl: z.string().nullish(),
-  images: z.array(z.string()).default([]),
+  images: z.preprocess(
+    (value) =>
+      value == null ? [] : typeof value === "string" ? [value] : value,
+    z.array(z.string()),
+  ),
   isActive: z.boolean().default(true),
   staffCount: z.coerce.number().nullish(),
   createdAt: z.string().nullish(),

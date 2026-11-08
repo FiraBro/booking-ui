@@ -28,7 +28,9 @@ async function list(
 }
 
 async function get(id: string): Promise<Service> {
-  return api.get<Service>(endpoints.services.detail(id));
+  return api.get<Service>(endpoints.services.detail(id), {
+    schema: serviceSchema,
+  });
 }
 
 async function categories(): Promise<ServiceCategory[]> {
@@ -43,7 +45,7 @@ async function parseService(raw: unknown, knownId?: string): Promise<Service> {
     !Array.isArray(raw) &&
     "name" in raw
   ) {
-    return raw as Service;
+    return serviceSchema.parse(raw);
   }
   const id = knownId ?? extractId(raw, "service");
   if (id) return get(id);

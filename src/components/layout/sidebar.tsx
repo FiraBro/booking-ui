@@ -1,12 +1,12 @@
 "use client";
 
-import { CalendarCheck } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getNavigation, getActiveNavItem } from "@/config/navigation";
 import { getHomeRoute } from "@/config/routes";
 import { useRecentNotifications } from "@/features/notifications/hooks/use-notifications";
-import { APP_NAME, type UserRole } from "@/lib/constants";
+import { type UserRole } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -26,12 +26,18 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
         <Link
           href={getHomeRoute(role)}
           onClick={onNavigate}
-          className="flex items-center gap-2 text-base font-semibold"
+          aria-label="Eventify home"
+          className="flex items-center"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CalendarCheck className="size-4" aria-hidden />
-          </span>
-          {APP_NAME}
+          <Image
+            src="/brand/eventify-logo.png"
+            alt="Eventify"
+            width={108}
+            height={36}
+            unoptimized
+            priority
+            className="h-8 w-auto object-contain"
+          />
         </Link>
       </div>
 
@@ -60,10 +66,10 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
                       onClick={onNavigate}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200 after:absolute after:inset-x-3 after:bottom-1 after:h-px after:origin-left after:bg-primary after:transition-transform after:duration-200",
                         isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                          ? "bg-primary text-primary-foreground after:scale-x-0"
+                          : "text-muted-foreground after:scale-x-0 hover:text-primary hover:after:scale-x-100",
                       )}
                     >
                       <Icon className="size-4 shrink-0" aria-hidden />

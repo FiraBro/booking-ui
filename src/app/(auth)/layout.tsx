@@ -1,4 +1,4 @@
-import { CalendarCheck } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ROUTES } from "@/config/routes";
@@ -10,12 +10,18 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <header className="flex h-16 items-center px-4 sm:px-8">
         <Link
           href={ROUTES.home}
-          className="flex items-center gap-2 text-base font-semibold"
+          aria-label="Eventify home"
+          className="flex items-center"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CalendarCheck className="size-4" aria-hidden />
-          </span>
-          {APP_NAME}
+          <Image
+            src="/brand/eventify-logo.png"
+            alt="Eventify"
+            width={108}
+            height={36}
+            unoptimized
+            priority
+            className="h-8 w-auto object-contain"
+          />
         </Link>
       </header>
       <main
