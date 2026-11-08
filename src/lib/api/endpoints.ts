@@ -19,7 +19,7 @@ export const endpoints = {
     create: "/users",
     detail: (id: string) => `/users/${id}`,
     role: (id: string) => `/users/${id}/role`,
-    invite: "/admin/invitations",
+    invite: "/staff",
   },
   services: {
     list: "/services",

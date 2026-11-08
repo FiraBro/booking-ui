@@ -27,6 +27,7 @@ import type { ListParams, PaginatedResponse } from "@/types/api";
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<RefreshResult> | null = null;
+let expirationPromise: Promise<void> | null = null;
 const sessionExpiredListeners = new Set<() => void>();
 
 export const tokenStore = {
@@ -47,9 +48,18 @@ export function subscribeSessionExpired(listener: () => void): () => void {
   };
 }
 
-export function expireSession(): void {
+export function expireSession(): Promise<void> {
   tokenStore.clear();
-  sessionExpiredListeners.forEach((listener) => listener());
+  if (!expirationPromise) {
+    expirationPromise = (async () => {
+      // The refresh cookie is httpOnly, so only the same-origin BFF can clear it.
+      await clearServerSession();
+      sessionExpiredListeners.forEach((listener) => listener());
+    })().finally(() => {
+      expirationPromise = null;
+    });
+  }
+  return expirationPromise;
 }
 
 /** True when the readable role cookie exists, i.e. the browser probably has a refresh-token cookie. */
@@ -113,7 +123,7 @@ export async function ensureAccessToken(): Promise<string | null> {
 
   const result = await refreshSession();
   if (result.status === "ok") return result.token;
-  if (result.status === "invalid") expireSession();
+  if (result.status === "invalid") await expireSession();
   return null;
 }
 
@@ -165,7 +175,10 @@ function isAuthEndpoint(url: string | undefined): boolean {
   );
 }
 
-type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type RetriableConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _accessToken?: string | null;
+};
 
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
@@ -178,6 +191,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(async (config) => {
   if (!isAuthEndpoint(config.url)) {
     const token = await ensureAccessToken();
+    (config as RetriableConfig)._accessToken = token;
     if (token) config.headers.set("Authorization", `Bearer ${token}`);
   }
   if (config.data !== undefined) config.data = snakeizeKeys(config.data);
@@ -205,13 +219,23 @@ apiClient.interceptors.response.use(
         (tokenStore.get() || hasSessionHint())
       ) {
         original._retry = true;
+        // A different request may already have refreshed while this 401 was in flight.
+        // Reuse that token instead of rotating the refresh cookie a second time.
+        const currentToken = tokenStore.get();
+        if (currentToken && currentToken !== original._accessToken) {
+          original._accessToken = currentToken;
+          original.headers.set("Authorization", `Bearer ${currentToken}`);
+          return apiClient(original);
+        }
+
         const result = await refreshSession();
 
         if (result.status === "ok") {
+          original._accessToken = result.token;
           original.headers.set("Authorization", `Bearer ${result.token}`);
           return apiClient(original);
         }
-        if (result.status === "invalid") expireSession();
+        if (result.status === "invalid") await expireSession();
       }
     }
     return Promise.reject(normalizeApiError(error));
