@@ -1,7 +1,8 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { CardGridSkeleton } from "@/components/shared/loading-skeleton";
@@ -15,9 +16,15 @@ import { useServices } from "@/features/services/hooks/use-services";
 
 const PAGE_SIZE = 12;
 
-export default function ServicesPage() {
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("all");
+function ServicesListing({
+  initialSearch,
+  initialCategoryId,
+}: {
+  initialSearch: string;
+  initialCategoryId: string;
+}) {
+  const [search, setSearch] = useState(initialSearch);
+  const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [page, setPage] = useState(1);
 
   const categories = useServiceCategories();
@@ -126,5 +133,27 @@ export default function ServicesPage() {
         </>
       )}
     </div>
+  );
+}
+
+function ServicesPageContent() {
+  const params = useSearchParams();
+  const query = params.toString();
+  const initialSearch = params.get("search")?.trim() ?? "";
+  const initialCategoryId = params.get("categoryId") || "all";
+  return (
+    <ServicesListing
+      key={query}
+      initialSearch={initialSearch}
+      initialCategoryId={initialCategoryId}
+    />
+  );
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton count={6} />}>
+      <ServicesPageContent />
+    </Suspense>
   );
 }
