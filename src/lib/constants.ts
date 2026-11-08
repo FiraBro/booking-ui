@@ -205,6 +205,7 @@ export const queryKeys = {
     all: ["bookings"] as const,
     list: (filters?: Filters) => ["bookings", filters ?? {}] as const,
     mine: (filters?: Filters) => ["bookings", "my", filters ?? {}] as const,
+    staff: (filters?: Filters) => ["bookings", "staff", filters ?? {}] as const,
     detail: (id: string) => ["booking", id] as const,
   },
   payments: {

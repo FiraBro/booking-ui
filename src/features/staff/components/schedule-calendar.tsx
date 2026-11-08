@@ -13,7 +13,7 @@ import { useState } from "react";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBookings } from "@/features/bookings/hooks/use-bookings";
+import { useStaffBookings } from "@/features/bookings/hooks/use-bookings";
 import { getBookingHref, personName } from "@/features/bookings/lib/display";
 import { useStaffSchedule } from "@/features/staff/hooks/use-staff";
 import type { BookingStatus, UserRole } from "@/lib/constants";
@@ -229,7 +229,7 @@ export function ScheduleCalendar({ staffId, role }: ScheduleCalendarProps) {
   const last = days[days.length - 1] as Date;
 
   const schedule = useStaffSchedule(staffId);
-  const bookingsQuery = useBookings(
+  const bookingsQuery = useStaffBookings(
     {
       staffId,
       dateFrom: toISODate(first),

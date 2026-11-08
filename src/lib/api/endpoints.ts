@@ -43,6 +43,7 @@ export const endpoints = {
     list: "/bookings",
     create: "/bookings",
     mine: "/bookings/my",
+    staff: "/bookings/staff",
     detail: (id: string) => `/bookings/${id}`,
     status: (id: string) => `/bookings/${id}/status`,
   },

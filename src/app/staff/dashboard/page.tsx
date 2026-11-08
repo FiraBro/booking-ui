@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import { useProfile } from "@/features/auth/hooks/use-profile";
 import { BookingList } from "@/features/bookings/components/booking-list";
-import { useBookings } from "@/features/bookings/hooks/use-bookings";
+import { useStaffBookings } from "@/features/bookings/hooks/use-bookings";
 import { UPCOMING_BOOKING_STATUSES } from "@/lib/constants";
 import { formatDate, formatLongDate, toISODate } from "@/lib/format";
 
@@ -24,7 +24,7 @@ export default function StaffDashboardPage() {
     return { today: toISODate(now), until: toISODate(addDays(now, 7)) };
   });
 
-  const query = useBookings({
+  const query = useStaffBookings({
     dateFrom: range.today,
     dateTo: range.until,
     page: 1,

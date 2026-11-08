@@ -8,11 +8,11 @@ import { PageHeader } from "@/components/shared/page-header";
 import { BookingFilterBar } from "@/features/bookings/components/booking-filter-bar";
 import { BookingsTable } from "@/features/bookings/components/booking-table";
 import { useBookingFilters } from "@/features/bookings/hooks/use-booking-filters";
-import { useBookings } from "@/features/bookings/hooks/use-bookings";
+import { useStaffBookings } from "@/features/bookings/hooks/use-bookings";
 
 function StaffBookingsContent() {
   const { filters, update, reset } = useBookingFilters();
-  const query = useBookings({
+  const query = useStaffBookings({
     ...filters,
     sortBy: filters.sortBy ?? "start_time",
     sortOrder: filters.sortOrder ?? "asc",

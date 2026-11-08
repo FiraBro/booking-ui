@@ -61,6 +61,17 @@ async function mine(
   });
 }
 
+async function staff(
+  params: BookingListParams = {},
+): Promise<PaginatedResponse<Booking>> {
+  const staffParams = Object.fromEntries(
+    Object.entries(params).filter(([key]) => key !== "staffId"),
+  ) as BookingListParams;
+  return api.getPaginated<Booking>(endpoints.bookings.staff, bookingSchema, {
+    ...mapSort(staffParams),
+  });
+}
+
 async function get(id: string): Promise<Booking> {
   return api.get<Booking>(endpoints.bookings.detail(id), {
     schema: bookingResponseSchema,
@@ -117,6 +128,7 @@ async function updateStatus(
 export const bookingsApi = {
   list,
   mine,
+  staff,
   get,
   create,
   update,

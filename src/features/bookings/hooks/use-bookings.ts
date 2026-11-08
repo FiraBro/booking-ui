@@ -49,6 +49,29 @@ export function useMyBookings(
   });
 }
 
+/** GET /bookings/staff. The backend scopes results to the authenticated staff member. */
+export function useStaffBookings(
+  params: BookingListParams = {},
+  options: { enabled?: boolean } = {},
+) {
+  const services = useServiceMap();
+  const staffParams = Object.fromEntries(
+    Object.entries(params).filter(([key]) => key !== "staffId"),
+  ) as BookingListParams;
+  const select = useCallback(
+    (page: PaginatedResponse<Booking>) => attachServices(page, services),
+    [services],
+  );
+  return useQuery({
+    queryKey: queryKeys.bookings.staff({ ...staffParams }),
+    queryFn: () => bookingsApi.staff(staffParams),
+    select,
+    placeholderData: keepPreviousData,
+    staleTime: STALE_TIME.short,
+    enabled: options.enabled ?? true,
+  });
+}
+
 export function useBooking(id: string | undefined) {
   const services = useServiceMap();
   const select = useCallback(
