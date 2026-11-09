@@ -79,13 +79,20 @@ export function SendNotificationForm() {
           : undefined,
     };
 
-    send.mutate(payload, {
-      onSuccess: () => {
-        reset();
-        setUserId("");
+    send.mutate(
+      {
+        input: payload,
+        audience,
+        userId: audience === "user" ? userId.trim() : undefined,
       },
-      onError: (error) => handleFormError(error, setError),
-    });
+      {
+        onSuccess: () => {
+          reset();
+          setUserId("");
+        },
+        onError: (error) => handleFormError(error, setError),
+      },
+    );
   });
 
   return (
