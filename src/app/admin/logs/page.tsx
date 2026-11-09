@@ -37,7 +37,7 @@ import { formatDateTime } from "@/lib/format";
 import type { Log } from "@/types";
 
 const ALL = "all";
-const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+const METHODS = ["POST", "PUT", "PATCH", "DELETE"] as const;
 
 function LogDetailsDialog({ log, onClose }: { log: Log; onClose: () => void }) {
   return (
