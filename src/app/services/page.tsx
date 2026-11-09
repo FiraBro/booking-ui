@@ -12,7 +12,7 @@ import { SearchInput } from "@/components/shared/search-input";
 import { Button } from "@/components/ui/button";
 import { ServiceCard } from "@/features/services/components/service-card";
 import { useServiceCategories } from "@/features/services/hooks/use-service-categories";
-import { useServices } from "@/features/services/hooks/use-services";
+import { useServiceCatalog } from "@/features/services/hooks/use-services";
 
 const PAGE_SIZE = 12;
 
@@ -28,14 +28,25 @@ function ServicesListing({
   const [page, setPage] = useState(1);
 
   const categories = useServiceCategories();
-  const services = useServices({
-    search,
-    categoryId,
-    isActive: true,
-    page,
-    pageSize: PAGE_SIZE,
+  const services = useServiceCatalog();
+  const normalizedSearch = search.toLocaleLowerCase();
+  const filteredItems = (services.data ?? []).filter((service) => {
+    const matchesSearch =
+      !normalizedSearch ||
+      [service.name, service.description, service.category?.name]
+        .some(
+          (value) =>
+            typeof value === "string" &&
+            value.toLocaleLowerCase().includes(normalizedSearch),
+        );
+    const matchesCategory =
+      categoryId === "all" ||
+      service.categoryId === categoryId ||
+      service.category?.id === categoryId;
+    return matchesSearch && matchesCategory;
   });
-  const items = services.data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const items = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function changeSearch(next: string) {
     setSearch(next);
@@ -124,8 +135,8 @@ function ServicesListing({
           </div>
           <div className="flex justify-center">
             <Pagination
-              page={services.data?.meta.page ?? page}
-              totalPages={services.data?.meta.totalPages ?? 1}
+              page={page}
+              totalPages={totalPages}
               onPageChange={setPage}
               disabled={services.isFetching}
             />

@@ -27,6 +27,21 @@ async function list(
   });
 }
 
+async function listAll(
+  params: Omit<ServiceListParams, "page" | "pageSize" | "search"> = {},
+): Promise<Service[]> {
+  const pageSize = 100;
+  const firstPage = await list({ ...params, page: 1, pageSize });
+  const services = [...firstPage.items];
+
+  for (let page = 2; page <= firstPage.meta.totalPages; page += 1) {
+    const result = await list({ ...params, page, pageSize });
+    services.push(...result.items);
+  }
+
+  return services;
+}
+
 async function get(id: string): Promise<Service> {
   return api.get<Service>(endpoints.services.detail(id), {
     schema: serviceSchema,
@@ -69,4 +84,12 @@ async function remove(id: string): Promise<void> {
   await api.delete<unknown>(endpoints.services.detail(id));
 }
 
-export const servicesApi = { list, get, categories, create, update, remove };
+export const servicesApi = {
+  list,
+  listAll,
+  get,
+  categories,
+  create,
+  update,
+  remove,
+};

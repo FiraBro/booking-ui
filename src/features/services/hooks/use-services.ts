@@ -17,3 +17,11 @@ export function useServices(
     enabled: options.enabled ?? true,
   });
 }
+
+export function useServiceCatalog(isActive = true) {
+  return useQuery({
+    queryKey: [...queryKeys.services.all, "catalog", { isActive }],
+    queryFn: () => servicesApi.listAll({ isActive }),
+    staleTime: STALE_TIME.default,
+  });
+}
