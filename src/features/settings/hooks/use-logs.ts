@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   settingsApi,
   type LogListParams,
-} from "@/features/settings/api/settings.api";
+} from "@/features/settings/api/setting.api";
 import { queryKeys, STALE_TIME } from "@/lib/constants";
 
 export function useLogs(params: LogListParams = {}) {

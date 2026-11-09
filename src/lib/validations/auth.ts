@@ -833,13 +833,21 @@ export const logSchema = z.object({
   entityId: z.string().nullish(),
   level: z.string().nullish(),
   message: z.string().nullish(),
+  role: z.string().nullish(),
   userId: idSchema.nullish(),
   userName: z.string().nullish(),
   userEmail: z.string().nullish(),
   ipAddress: z.string().nullish(),
+  ip: z.string().nullish(),
+  method: z.string().nullish(),
+  path: z.string().nullish(),
+  route: z.string().nullish(),
+  status: z.coerce.number().nullish(),
+  statusCode: z.coerce.number().nullish(),
+  durationMs: z.coerce.number().nullish(),
   metadata: z.record(z.string(), z.unknown()).nullish(),
   createdAt: z.string(),
-});
+}).passthrough();
 
 /* ==========================================================================
    4. Authentication forms and responses

@@ -10,8 +10,9 @@ import type {
 } from "@/types";
 
 export type LogListParams = ListParams & {
-  level?: string;
-  entity?: string;
+  userId?: string;
+  method?: string;
+  statusCode?: number;
   dateFrom?: string;
   dateTo?: string;
 };

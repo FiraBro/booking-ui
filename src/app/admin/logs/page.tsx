@@ -11,10 +11,12 @@ import {
   type DateRangeValue,
 } from "@/components/shared/date-range-filter";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +37,7 @@ import { formatDateTime } from "@/lib/format";
 import type { Log } from "@/types";
 
 const ALL = "all";
-const LEVELS = ["info", "warning", "error"] as const;
+const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 function LogDetailsDialog({ log, onClose }: { log: Log; onClose: () => void }) {
   return (
@@ -59,26 +61,36 @@ function LogDetailsDialog({ log, onClose }: { log: Log; onClose: () => void }) {
               User
             </dt>
             <dd className="mt-1">
-              {log.userName ?? log.userEmail ?? "System"}
+              {log.userName ?? log.userEmail ?? log.role ?? "System"}
             </dd>
           </div>
-          {log.ipAddress ? (
+          {log.method ||
+          log.path ||
+          log.route ||
+          log.statusCode != null ||
+          log.status != null ? (
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Request
+              </dt>
+              <dd className="mt-1 break-all font-mono text-xs">
+                {[
+                  log.method?.toUpperCase(),
+                  log.path ?? log.route,
+                  log.statusCode ?? log.status,
+                ]
+                  .filter((value) => value != null && value !== "")
+                  .join(" ") || "—"}
+              </dd>
+            </div>
+          ) : null}
+          {log.ip ?? log.ipAddress ? (
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 IP address
               </dt>
-              <dd className="mt-1 font-mono text-xs">{log.ipAddress}</dd>
-            </div>
-          ) : null}
-          {log.metadata ? (
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Metadata
-              </dt>
-              <dd className="mt-1">
-                <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">
-                  {JSON.stringify(log.metadata, null, 2)}
-                </pre>
+              <dd className="mt-1 font-mono text-xs">
+                {log.ip ?? log.ipAddress}
               </dd>
             </div>
           ) : null}
@@ -90,15 +102,23 @@ function LogDetailsDialog({ log, onClose }: { log: Log; onClose: () => void }) {
 
 export default function AdminLogsPage() {
   const [search, setSearch] = useState("");
-  const [level, setLevel] = useState(ALL);
+  const [userId, setUserId] = useState("");
+  const [method, setMethod] = useState(ALL);
+  const [status, setStatus] = useState("");
   const [range, setRange] = useState<DateRangeValue>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState<Log | null>(null);
+  const statusCode = Number(status);
 
   const query = useLogs({
     search,
-    level,
+    userId,
+    method,
+    statusCode:
+      status && Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599
+        ? statusCode
+        : undefined,
     dateFrom: range.dateFrom,
     dateTo: range.dateTo,
     page,
@@ -119,39 +139,67 @@ export default function AdminLogsPage() {
       ),
     },
     {
-      id: "level",
-      header: "Level",
-      cell: (log) => <StatusBadge status={log.level ?? "info"} />,
+      id: "method",
+      header: "Method",
+      cell: (log) => (
+        <StatusBadge status={log.method?.toUpperCase() ?? "—"} />
+      ),
     },
     {
       id: "action",
       header: "Action",
       cell: (log) => (
         <div className="min-w-0">
-          <p className="truncate font-medium">{log.action || "—"}</p>
-          {log.entity ? (
+          <p className="truncate font-medium">
+            {log.path || log.route || log.action || "—"}
+          </p>
+          {log.message || log.entity ? (
             <p className="truncate text-xs text-muted-foreground">
-              {log.entity}
-              {log.entityId ? ` #${log.entityId}` : ""}
+              {log.message ||
+                `${log.entity}${log.entityId ? ` #${log.entityId}` : ""}`}
             </p>
           ) : null}
         </div>
       ),
     },
     {
+      id: "status",
+      header: "Status",
+      cell: (log) => (
+        <span className="tabular-nums">
+          {log.statusCode ?? log.status ?? "—"}
+        </span>
+      ),
+    },
+    {
       id: "user",
       header: "User",
       hideBelow: "md",
-      cell: (log) =>
-        log.userName ??
-        log.userEmail ?? <span className="text-muted-foreground">System</span>,
+      cell: (log) => (
+        <div className="min-w-0">
+          <p className="truncate">
+            {log.userName ?? log.userEmail ?? log.role ?? "System"}
+          </p>
+          {log.userName && log.userEmail ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {log.userEmail}
+            </p>
+          ) : log.userId ? (
+            <p className="truncate font-mono text-xs text-muted-foreground">
+              {log.userId}
+            </p>
+          ) : null}
+        </div>
+      ),
     },
     {
       id: "ip",
       header: "IP",
       hideBelow: "lg",
       cell: (log) => (
-        <span className="font-mono text-xs">{log.ipAddress ?? "—"}</span>
+        <span className="font-mono text-xs">
+          {log.ip ?? log.ipAddress ?? "—"}
+        </span>
       ),
     },
     {
@@ -191,28 +239,54 @@ export default function AdminLogsPage() {
           onChange={resetPage(setSearch)}
           placeholder="Search logs"
         />
-        <Select value={level} onValueChange={resetPage(setLevel)}>
+        <Input
+          aria-label="Filter by user ID"
+          value={userId}
+          onChange={(event) => resetPage(setUserId)(event.target.value)}
+          placeholder="User ID"
+          className="w-full sm:w-40"
+        />
+        <Select value={method} onValueChange={resetPage(setMethod)}>
           <SelectTrigger
-            aria-label="Filter by level"
-            className="w-full sm:w-40"
+            aria-label="Filter by HTTP method"
+            className="w-full sm:w-36"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All levels</SelectItem>
-            {LEVELS.map((value) => (
+            <SelectItem value={ALL}>All methods</SelectItem>
+            {METHODS.map((value) => (
               <SelectItem key={value} value={value}>
-                {value.charAt(0).toUpperCase() + value.slice(1)}
+                {value}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        <Input
+          aria-label="Filter by HTTP status"
+          type="number"
+          min={100}
+          max={599}
+          value={status}
+          onChange={(event) => resetPage(setStatus)(event.target.value)}
+          placeholder="Status"
+          className="w-full sm:w-28"
+        />
         <DateRangeFilter
           value={range}
           onChange={resetPage(setRange)}
           placeholder="Any date"
         />
       </div>
+
+      {query.error && query.data ? (
+        <ErrorState
+          error={query.error}
+          title="Could not refresh audit logs"
+          onRetry={() => void query.refetch()}
+          className="p-4"
+        />
+      ) : null}
 
       <DataTable<Log>
         caption="Audit logs"
